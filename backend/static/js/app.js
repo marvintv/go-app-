@@ -8,9 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const addEventButton = document.getElementById('add-event');
     
     // Search elements
-    const searchWorkerIdInput = document.getElementById('search-worker-id');
-    const searchFieldSelect = document.getElementById('search-field');
-    const searchOperationSelect = document.getElementById('search-operation');
+    const employeeSearchInput = document.getElementById('employee-search');
     const searchButton = document.getElementById('search-button');
     const resetSearchButton = document.getElementById('reset-search');
     
@@ -203,11 +201,16 @@ document.addEventListener('DOMContentLoaded', function() {
         filterEvents();
     });
     
+    // Also trigger search on Enter key
+    employeeSearchInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            filterEvents();
+        }
+    });
+    
     resetSearchButton.addEventListener('click', function() {
-        // Clear search inputs
-        searchWorkerIdInput.value = '';
-        searchFieldSelect.value = '';
-        searchOperationSelect.value = '';
+        // Clear search input
+        employeeSearchInput.value = '';
         
         // Reset display to show all events
         displayFilteredEvents(allEvents);
@@ -215,24 +218,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to filter events based on search criteria
     function filterEvents() {
-        const workerId = searchWorkerIdInput.value.trim();
-        const fieldType = searchFieldSelect.value;
-        const operationType = searchOperationSelect.value;
+        const searchTerm = employeeSearchInput.value.trim();
         
-        // If no filters are applied, show all events
-        if (!workerId && !fieldType && !operationType) {
+        // If no search term is provided, show all events
+        if (!searchTerm) {
             displayFilteredEvents(allEvents);
             return;
         }
         
-        // Build query URL
-        let queryUrl = '/api/events/query?';
-        if (workerId) queryUrl += `workerId=${encodeURIComponent(workerId)}&`;
-        if (fieldType) queryUrl += `fieldType=${encodeURIComponent(fieldType)}&`;
-        if (operationType) queryUrl += `operationType=${encodeURIComponent(operationType)}&`;
-        
-        // Remove trailing &
-        queryUrl = queryUrl.replace(/&$/, '');
+        // Build query URL - we'll just use workerId parameter for simplicity
+        let queryUrl = `/api/events/query?workerId=${encodeURIComponent(searchTerm)}`;
         
         // Show loading state
         eventsContainer.innerHTML = '<div class="event"><div class="event-time">Loading results...</div></div>';
