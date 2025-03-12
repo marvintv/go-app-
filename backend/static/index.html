@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Worker Change Stream Viewer</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <h1>Worker Change Stream Viewer</h1>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-value" id="total-events">0</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="insert-count">0</div>
+            <div class="stat-label">Inserts</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="update-count">0</div>
+            <div class="stat-label">Updates</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="delete-count">0</div>
+            <div class="stat-label">Deletes</div>
+        </div>
+        <div class="stat-box coconut-box">
+            <div class="stat-value" id="coconut-count">0 🥥</div>
+            <div class="stat-label">Co Go nuts</div>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <div id="events">
+            <div class="event">
+                <div class="event-time">Waiting for events...</div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <h2>Add New Event</h2>
+            <div class="form-group">
+                <label for="operation-type">Operation Type:</label>
+                <select id="operation-type">
+                    <option value="insert">Insert</option>
+                    <option value="update">Update</option>
+                    <option value="delete">Delete</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="worker-id">Worker ID:</label>
+                <input type="text" id="worker-id" placeholder="TS12345" value="TS87652">
+            </div>
+            
+            <div class="form-group">
+                <label for="field-type">Field to Change:</label>
+                <select id="field-type">
+                    <option value="JobTitle">Job Title</option>
+                    <option value="Department">Department</option>
+                    <option value="WorkLocation">Work Location</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Manager">Manager</option>
+                    <option value="EmploymentStatus">Employment Status</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="old-value">Old Value:</label>
+                <input type="text" id="old-value" placeholder="Previous value">
+            </div>
+            
+            <div class="form-group">
+                <label for="new-value">New Value:</label>
+                <input type="text" id="new-value" placeholder="New value">
+            </div>
+            
+            <button id="add-event">Add Event</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html> 
