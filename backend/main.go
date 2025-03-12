@@ -67,9 +67,9 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 	// Use worker change events from the JSON file
 	workerEvents := []map[string]interface{}{
 		{
-			"EventID":      "CE123456789",
-			"WorkerID":     "TS87652",
-			"EventType":    "Update",
+			"EventID":       "CE123456789",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
 			"EffectiveDate": "2025-04-01",
 			"ChangeDetails": map[string]interface{}{
 				"Field":    "JobTitle",
@@ -82,9 +82,9 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 			},
 		},
 		{
-			"EventID":      "CE987654321",
-			"WorkerID":     "TS87652",
-			"EventType":    "Update",
+			"EventID":       "CE987654321",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
 			"EffectiveDate": "2025-05-15",
 			"ChangeDetails": map[string]interface{}{
 				"Field":    "Department",
@@ -97,9 +97,9 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 			},
 		},
 		{
-			"EventID":      "CE192837465",
-			"WorkerID":     "TS87652",
-			"EventType":    "Update",
+			"EventID":       "CE192837465",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
 			"EffectiveDate": "2025-06-01",
 			"ChangeDetails": map[string]interface{}{
 				"Field":    "WorkLocation",
@@ -115,13 +115,10 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 
 	// Generate additional worker IDs for more variety
 	workerIDs := []string{"TS87652", "TS12345", "TS54321", "TS98765", "TS24680", "TS13579"}
-	
+
 	// Fields that can be updated
-	fields := []string{
-		"JobTitle", "Department", "WorkLocation", "Salary", "Manager", 
-		"EmploymentStatus", "WorkSchedule", "Benefits", "PerformanceRating"
-	}
-	
+	fields := []string{"JobTitle", "Department", "WorkLocation", "Salary", "Manager", "EmploymentStatus", "WorkSchedule", "Benefits", "PerformanceRating"}
+
 	// Operations to simulate
 	operations := []string{"insert", "update", "delete"}
 
@@ -133,7 +130,7 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 
 		// Either use a predefined event or generate a new one
 		var eventData map[string]interface{}
-		
+
 		if rand.Intn(2) == 0 && len(workerEvents) > 0 {
 			// Use a predefined event
 			eventIndex := rand.Intn(len(workerEvents))
@@ -142,14 +139,14 @@ func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
 			// Generate a new random event
 			workerID := workerIDs[rand.Intn(len(workerIDs))]
 			field := fields[rand.Intn(len(fields))]
-			
+
 			// Generate random values based on field type
 			oldValue, newValue := generateRandomValues(field)
-			
+
 			eventData = map[string]interface{}{
-				"EventID":      fmt.Sprintf("CE%d", rand.Intn(1000000)),
-				"WorkerID":     workerID,
-				"EventType":    "Update",
+				"EventID":       fmt.Sprintf("CE%d", rand.Intn(1000000)),
+				"WorkerID":      workerID,
+				"EventType":     "Update",
 				"EffectiveDate": time.Now().AddDate(0, rand.Intn(6), rand.Intn(30)).Format("2006-01-02"),
 				"ChangeDetails": map[string]interface{}{
 					"Field":    field,
@@ -188,40 +185,40 @@ func generateRandomValues(field string) (string, string) {
 	case "JobTitle":
 		titles := []string{"Software Engineer", "Senior Software Engineer", "Tech Lead", "Engineering Manager", "Product Manager", "QA Engineer", "DevOps Engineer"}
 		return titles[rand.Intn(len(titles))], titles[rand.Intn(len(titles))]
-	
+
 	case "Department":
 		departments := []string{"Engineering", "Product", "Marketing", "Sales", "HR", "Finance", "Research & Development", "Customer Support"}
 		return departments[rand.Intn(len(departments))], departments[rand.Intn(len(departments))]
-	
+
 	case "WorkLocation":
 		locations := []string{"Remote", "Onsite", "Hybrid", "New York", "San Francisco", "London", "Tokyo", "Berlin"}
 		return locations[rand.Intn(len(locations))], locations[rand.Intn(len(locations))]
-	
+
 	case "Salary":
 		oldSalary := 50000 + rand.Intn(100000)
 		newSalary := oldSalary + rand.Intn(20000)
 		return fmt.Sprintf("$%d", oldSalary), fmt.Sprintf("$%d", newSalary)
-	
+
 	case "Manager":
 		managers := []string{"Alice Smith", "Bob Johnson", "Carol Williams", "David Brown", "Emma Davis", "Frank Miller"}
 		return managers[rand.Intn(len(managers))], managers[rand.Intn(len(managers))]
-	
+
 	case "EmploymentStatus":
 		statuses := []string{"Full-time", "Part-time", "Contract", "Temporary", "Probation", "Permanent"}
 		return statuses[rand.Intn(len(statuses))], statuses[rand.Intn(len(statuses))]
-	
+
 	case "WorkSchedule":
 		schedules := []string{"9-5", "Flexible", "4-day week", "Night shift", "Weekend", "Rotating"}
 		return schedules[rand.Intn(len(schedules))], schedules[rand.Intn(len(schedules))]
-	
+
 	case "Benefits":
 		benefits := []string{"Standard", "Premium", "Basic", "Executive", "Custom", "International"}
 		return benefits[rand.Intn(len(benefits))], benefits[rand.Intn(len(benefits))]
-	
+
 	case "PerformanceRating":
 		ratings := []string{"Exceeds Expectations", "Meets Expectations", "Needs Improvement", "Outstanding", "Satisfactory"}
 		return ratings[rand.Intn(len(ratings))], ratings[rand.Intn(len(ratings))]
-	
+
 	default:
 		return "Previous Value", "New Value"
 	}
