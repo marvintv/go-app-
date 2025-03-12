@@ -34,6 +34,7 @@ func (s *Server) Start() error {
 	http.HandleFunc("/events", s.handleSSE)
 	http.HandleFunc("/api/events", s.handleGetEvents)
 	http.HandleFunc("/api/events/add", s.handleAddEvent)
+	http.HandleFunc("/api/events/query", s.handleQueryEvents)
 
 	// Serve static files
 	fs := http.FileServer(http.Dir("static"))
@@ -151,4 +152,66 @@ func (s *Server) handleAddEvent(w http.ResponseWriter, r *http.Request) {
 	// Return success
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// handleQueryEvents handles querying events with filters.
+func (s *Server) handleQueryEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Parse query parameters
+	query := r.URL.Query()
+	workerID := query.Get("workerId")
+	fieldType := query.Get("fieldType")
+	operationType := query.Get("operationType")
+
+	// Get all events from the change stream
+	var events []changestream.ChangeEvent
+	ctx := r.Context()
+
+	// Reset the index to read from the beginning
+	s.changeStream.Next(ctx)
+	for s.changeStream.Next(ctx) {
+		var event changestream.ChangeEvent
+		if err := s.changeStream.Decode(&event); err != nil {
+			break
+		}
+
+		// Apply filters if provided
+		if operationType != "" && event.OperationType != operationType {
+			continue
+		}
+
+		// Check if the event has WorkerChangeEvent data
+		workerEvent, ok := event.FullDocument["WorkerChangeEvent"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Filter by worker ID if provided
+		if workerID != "" {
+			eventWorkerID, ok := workerEvent["WorkerID"].(string)
+			if !ok || eventWorkerID != workerID {
+				continue
+			}
+		}
+
+		// Filter by field type if provided
+		if fieldType != "" {
+			changeDetails, ok := workerEvent["ChangeDetails"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			eventFieldType, ok := changeDetails["Field"].(string)
+			if !ok || eventFieldType != fieldType {
+				continue
+			}
+		}
+
+		events = append(events, event)
+	}
+
+	// Return filtered events as JSON
+	json.NewEncoder(w).Encode(events)
 }

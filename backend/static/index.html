@@ -30,6 +30,41 @@
         </div>
     </div>
     
+    <div class="search-panel">
+        <h2>Query Events</h2>
+        <div class="search-form">
+            <div class="form-group">
+                <label for="search-worker-id">Worker ID:</label>
+                <input type="text" id="search-worker-id" placeholder="Filter by Worker ID">
+            </div>
+            <div class="form-group">
+                <label for="search-field">Field Type:</label>
+                <select id="search-field">
+                    <option value="">All Fields</option>
+                    <option value="JobTitle">Job Title</option>
+                    <option value="Department">Department</option>
+                    <option value="WorkLocation">Work Location</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Manager">Manager</option>
+                    <option value="EmploymentStatus">Employment Status</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="search-operation">Operation Type:</label>
+                <select id="search-operation">
+                    <option value="">All Operations</option>
+                    <option value="insert">Insert</option>
+                    <option value="update">Update</option>
+                    <option value="delete">Delete</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <button id="search-button">Search</button>
+                <button id="reset-search">Reset</button>
+            </div>
+        </div>
+    </div>
+    
     <div class="dashboard">
         <div id="events">
             <div class="event">

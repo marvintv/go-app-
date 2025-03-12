@@ -7,11 +7,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const newValueInput = document.getElementById('new-value');
     const addEventButton = document.getElementById('add-event');
     
+    // Search elements
+    const searchWorkerIdInput = document.getElementById('search-worker-id');
+    const searchFieldSelect = document.getElementById('search-field');
+    const searchOperationSelect = document.getElementById('search-operation');
+    const searchButton = document.getElementById('search-button');
+    const resetSearchButton = document.getElementById('reset-search');
+    
     // Stats counters
     let totalEvents = 0;
     let insertCount = 0;
     let updateCount = 0;
     let deleteCount = 0;
+    
+    // Store all events for filtering
+    let allEvents = [];
     
     // Connect to SSE endpoint
     const eventSource = new EventSource('/events');
@@ -20,6 +30,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const event = JSON.parse(e.data);
         addEventToUI(event, true);
         updateStats(event.operationType);
+        
+        // Add to allEvents array for filtering
+        allEvents.unshift(event);
+        
+        // Limit the size of allEvents to prevent memory issues
+        if (allEvents.length > 500) {
+            allEvents = allEvents.slice(0, 500);
+        }
     });
     
     eventSource.addEventListener('ping', function(e) {
@@ -86,6 +104,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Clear form fields
             oldValueInput.value = '';
             newValueInput.value = '';
+            
+            // Note: We don't need to manually add the event to allEvents here
+            // because it will come back through the SSE connection
         })
         .catch(error => {
             console.error('Error:', error);
@@ -167,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(events => {
             eventsContainer.innerHTML = '';
+            allEvents = events; // Store all events for filtering
             events.forEach(event => {
                 addEventToUI(event);
                 updateStats(event.operationType);
@@ -176,6 +198,78 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading events:', error);
         });
         
+    // Search functionality
+    searchButton.addEventListener('click', function() {
+        filterEvents();
+    });
+    
+    resetSearchButton.addEventListener('click', function() {
+        // Clear search inputs
+        searchWorkerIdInput.value = '';
+        searchFieldSelect.value = '';
+        searchOperationSelect.value = '';
+        
+        // Reset display to show all events
+        displayFilteredEvents(allEvents);
+    });
+    
+    // Function to filter events based on search criteria
+    function filterEvents() {
+        const workerId = searchWorkerIdInput.value.trim();
+        const fieldType = searchFieldSelect.value;
+        const operationType = searchOperationSelect.value;
+        
+        // If no filters are applied, show all events
+        if (!workerId && !fieldType && !operationType) {
+            displayFilteredEvents(allEvents);
+            return;
+        }
+        
+        // Build query URL
+        let queryUrl = '/api/events/query?';
+        if (workerId) queryUrl += `workerId=${encodeURIComponent(workerId)}&`;
+        if (fieldType) queryUrl += `fieldType=${encodeURIComponent(fieldType)}&`;
+        if (operationType) queryUrl += `operationType=${encodeURIComponent(operationType)}&`;
+        
+        // Remove trailing &
+        queryUrl = queryUrl.replace(/&$/, '');
+        
+        // Show loading state
+        eventsContainer.innerHTML = '<div class="event"><div class="event-time">Loading results...</div></div>';
+        
+        // Fetch filtered events from server
+        fetch(queryUrl)
+            .then(response => response.json())
+            .then(events => {
+                displayFilteredEvents(events);
+            })
+            .catch(error => {
+                console.error('Error querying events:', error);
+                eventsContainer.innerHTML = '<div class="event"><div class="event-time">Error loading results. Please try again.</div></div>';
+            });
+    }
+    
+    // Function to display filtered events
+    function displayFilteredEvents(events) {
+        eventsContainer.innerHTML = '';
+        
+        if (events.length === 0) {
+            const noResultsElement = document.createElement('div');
+            noResultsElement.className = 'event';
+            noResultsElement.innerHTML = '<div class="event-time">No matching events found</div>';
+            eventsContainer.appendChild(noResultsElement);
+            return;
+        }
+        
+        // Sort events by timestamp (newest first)
+        events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        // Display filtered events
+        events.forEach(event => {
+            addEventToUI(event, false);
+        });
+    }
+    
     // Populate field values based on selection
     fieldTypeSelect.addEventListener('change', function() {
         const field = this.value;
