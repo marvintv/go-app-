@@ -1,0 +1,53 @@
+[
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE123456789",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-04-01",
+        "ChangeDetails": {
+          "Field": "JobTitle",
+          "OldValue": "Software Engineer",
+          "NewValue": "Senior Software Engineer"
+        },
+        "Metadata": {
+          "InitiatedBy": "admin",
+          "Timestamp": "2025-03-12T15:30:00Z"
+        }
+      }
+    },
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE987654321",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-05-15",
+        "ChangeDetails": {
+          "Field": "Department",
+          "OldValue": "Development",
+          "NewValue": "Research & Development"
+        },
+        "Metadata": {
+          "InitiatedBy": "hr_manager",
+          "Timestamp": "2025-03-15T09:45:00Z"
+        }
+      }
+    },
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE192837465",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-06-01",
+        "ChangeDetails": {
+          "Field": "WorkLocation",
+          "OldValue": "Remote",
+          "NewValue": "Onsite"
+        },
+        "Metadata": {
+          "InitiatedBy": "system",
+          "Timestamp": "2025-03-20T11:20:00Z"
+        }
+      }
+    }
+  ]
