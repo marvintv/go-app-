@@ -166,10 +166,10 @@ const FloatingIslandHeader = ({ title }: FloatingIslandHeaderProps) => {
     <div className="relative">
       <div 
         ref={containerRef} 
-        className="w-full h-40 sm:h-60"
+        className="w-full h-200 sm:h-200"
       />
       <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
-        <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg">
+        <h1 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg px-6 py-2 rounded-lg border-2 border-gray-400 bg-black/20 backdrop-blur-sm">
           {title}
         </h1>
       </div>
