@@ -1,0 +1,1651 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+</notes>
+
+<additional_info>
+
+</additional_info>
+
+</file_summary>
+
+<directory_structure>
+ai_docs/
+  instructions.md
+  worker.json
+changestream/
+  change_stream.go
+server/
+  server.go
+static/
+  css/
+    styles.css
+  js/
+    app.js
+  index.html
+docker-compose.yml
+Dockerfile
+go.mod
+main.go
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="ai_docs/instructions.md">
+# Instructions
+
+
+# I want to create a backend service in Go, creating an event stream to post to a local endpoint so i can test with a curl request.
+
+The point of this is to simulate a response A response from WorkdayAPI, which is going to write into the Mongo database, which is what we're going to simulate, and then use this go routine to simulate that change event kind of as a change stream. It's going to respond with JSON data. I want to view it LIVE through an endpoint in the browser.
+
+Maybe setup a mock html page to view it (curl request.)
+
+
+## sample code
+
+// change_stream.go
+package changestream
+
+import (
+	"context"
+	"errors"
+)
+
+// ChangeEvent represents a MongoDB change event.
+type ChangeEvent struct {
+	OperationType string
+	FullDocument  interface{}
+}
+
+// ChangeStream defines the methods you'll use.
+type ChangeStream interface {
+	Next(ctx context.Context) bool
+	Decode(val interface{}) error
+	Close(ctx context.Context) error
+}
+
+// RealChangeStream would wrap the actual MongoDB change stream.
+// For production, you'll implement this using collection.Watch().
+
+// MockChangeStream simulates a change stream.
+type MockChangeStream struct {
+	events []ChangeEvent
+	index  int
+}
+
+// NewMockChangeStream returns a mock with preloaded events.
+func NewMockChangeStream(events []ChangeEvent) *MockChangeStream {
+	return &MockChangeStream{events: events}
+}
+
+func (m *MockChangeStream) Next(ctx context.Context) bool {
+	return m.index < len(m.events)
+}
+
+func (m *MockChangeStream) Decode(val interface{}) error {
+	if m.index >= len(m.events) {
+		return errors.New("no more events")
+	}
+	// Assume val is of type *ChangeEvent.
+	if ce, ok := val.(*ChangeEvent); ok {
+		*ce = m.events[m.index]
+		m.index++
+		return nil
+	}
+	return errors.New("unexpected type")
+}
+
+func (m *MockChangeStream) Close(ctx context.Context) error {
+	return nil
+}
+
+	4.	Using the Mock in Your Application:
+In your tests or development mode, instantiate your mock change stream with some dummy 
+
+
+
+// main.go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"yourmodule/changestream"
+)
+
+func main() {
+	// Preload some fake events.
+	events := []changestream.ChangeEvent{
+		{OperationType: "insert", FullDocument: map[string]interface{}{"name": "Alice", "value": 42}},
+		{OperationType: "update", FullDocument: map[string]interface{}{"name": "Bob", "value": 100}},
+	}
+
+	// Use the mock change stream.
+	cs := changestream.NewMockChangeStream(events)
+
+	ctx := context.Background()
+	for cs.Next(ctx) {
+		var event changestream.ChangeEvent
+		if err := cs.Decode(&event); err != nil {
+			log.Fatal(err)
+		}
+		// Here, push the event to your UI (e.g., via WebSockets).
+		fmt.Printf("Received event: %+v\n", event)
+	}
+
+	if err := cs.Close(ctx); err != nil {
+		log.Fatal(err)
+	}
+}
+
+###
+	5.	Pushing Updates into MongoDB:
+In your real service, you’d use the MongoDB driver to perform operations (like InsertOne, UpdateOne, etc.), which would trigger actual change stream events if you’re running in a replica set.
+</file>
+
+<file path="ai_docs/worker.json">
+[
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE123456789",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-04-01",
+        "ChangeDetails": {
+          "Field": "JobTitle",
+          "OldValue": "Software Engineer",
+          "NewValue": "Senior Software Engineer"
+        },
+        "Metadata": {
+          "InitiatedBy": "admin",
+          "Timestamp": "2025-03-12T15:30:00Z"
+        }
+      }
+    },
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE987654321",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-05-15",
+        "ChangeDetails": {
+          "Field": "Department",
+          "OldValue": "Development",
+          "NewValue": "Research & Development"
+        },
+        "Metadata": {
+          "InitiatedBy": "hr_manager",
+          "Timestamp": "2025-03-15T09:45:00Z"
+        }
+      }
+    },
+    {
+      "WorkerChangeEvent": {
+        "EventID": "CE192837465",
+        "WorkerID": "TS87652",
+        "EventType": "Update",
+        "EffectiveDate": "2025-06-01",
+        "ChangeDetails": {
+          "Field": "WorkLocation",
+          "OldValue": "Remote",
+          "NewValue": "Onsite"
+        },
+        "Metadata": {
+          "InitiatedBy": "system",
+          "Timestamp": "2025-03-20T11:20:00Z"
+        }
+      }
+    }
+  ]
+</file>
+
+<file path="changestream/change_stream.go">
+package changestream
+
+import (
+	"context"
+	"errors"
+	"sync"
+	"time"
+)
+
+// ChangeEvent represents a MongoDB change event.
+type ChangeEvent struct {
+	OperationType string                 `json:"operationType"`
+	FullDocument  map[string]interface{} `json:"fullDocument"`
+	Timestamp     time.Time              `json:"timestamp"`
+}
+
+// ChangeStream defines the methods you'll use.
+type ChangeStream interface {
+	Next(ctx context.Context) bool
+	Decode(val interface{}) error
+	Close(ctx context.Context) error
+}
+
+// MockChangeStream simulates a change stream.
+type MockChangeStream struct {
+	events     []ChangeEvent
+	index      int
+	mu         sync.Mutex
+	subscribers []chan ChangeEvent
+}
+
+// NewMockChangeStream returns a mock with preloaded events.
+func NewMockChangeStream(events []ChangeEvent) *MockChangeStream {
+	return &MockChangeStream{
+		events:      events,
+		subscribers: make([]chan ChangeEvent, 0),
+	}
+}
+
+// Next checks if there are more events to process.
+func (m *MockChangeStream) Next(ctx context.Context) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.index < len(m.events)
+}
+
+// Decode retrieves the next event.
+func (m *MockChangeStream) Decode(val interface{}) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	if m.index >= len(m.events) {
+		return errors.New("no more events")
+	}
+	
+	// Assume val is of type *ChangeEvent.
+	if ce, ok := val.(*ChangeEvent); ok {
+		*ce = m.events[m.index]
+		m.index++
+		return nil
+	}
+	return errors.New("unexpected type")
+}
+
+// Close closes the change stream.
+func (m *MockChangeStream) Close(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	// Close all subscriber channels
+	for _, ch := range m.subscribers {
+		close(ch)
+	}
+	m.subscribers = nil
+	
+	return nil
+}
+
+// AddEvent adds a new event to the stream and notifies all subscribers.
+func (m *MockChangeStream) AddEvent(event ChangeEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	// Add timestamp if not provided
+	if event.Timestamp.IsZero() {
+		event.Timestamp = time.Now()
+	}
+	
+	m.events = append(m.events, event)
+	
+	// Notify all subscribers
+	for _, ch := range m.subscribers {
+		select {
+		case ch <- event:
+			// Event sent successfully
+		default:
+			// Channel is full or closed, skip
+		}
+	}
+}
+
+// Subscribe returns a channel that will receive all new events.
+func (m *MockChangeStream) Subscribe() chan ChangeEvent {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	ch := make(chan ChangeEvent, 100) // Buffer size of 100 events
+	m.subscribers = append(m.subscribers, ch)
+	return ch
+}
+
+// Unsubscribe removes a subscription channel.
+func (m *MockChangeStream) Unsubscribe(ch chan ChangeEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	
+	for i, subCh := range m.subscribers {
+		if subCh == ch {
+			close(ch)
+			// Remove from subscribers slice
+			m.subscribers = append(m.subscribers[:i], m.subscribers[i+1:]...)
+			break
+		}
+	}
+}
+</file>
+
+<file path="server/server.go">
+package server
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+
+	"naru/backend/changestream"
+)
+
+// Server represents the HTTP server for the change stream.
+type Server struct {
+	changeStream *changestream.MockChangeStream
+	addr         string
+	mu           sync.Mutex
+	clients      map[chan changestream.ChangeEvent]bool
+}
+
+// NewServer creates a new server instance.
+func NewServer(cs *changestream.MockChangeStream, addr string) *Server {
+	return &Server{
+		changeStream: cs,
+		addr:         addr,
+		clients:      make(map[chan changestream.ChangeEvent]bool),
+	}
+}
+
+// Start starts the HTTP server.
+func (s *Server) Start() error {
+	// Set up routes
+	http.HandleFunc("/events", s.handleSSE)
+	http.HandleFunc("/api/events", s.handleGetEvents)
+	http.HandleFunc("/api/events/add", s.handleAddEvent)
+	http.HandleFunc("/api/events/query", s.handleQueryEvents)
+
+	// Serve static files
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Serve index.html for the root path
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			http.NotFound(w, r)
+			return
+		}
+		http.ServeFile(w, r, "static/index.html")
+	})
+
+	// Start the server
+	log.Printf("Server starting on %s", s.addr)
+	return http.ListenAndServe(s.addr, nil)
+}
+
+// handleSSE handles Server-Sent Events connections.
+func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
+	// Set headers for SSE
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Create a new client channel
+	eventChan := s.changeStream.Subscribe()
+
+	// Register this client
+	s.mu.Lock()
+	s.clients[eventChan] = true
+	s.mu.Unlock()
+
+	// Make sure we close the connection when the client disconnects
+	// Using request context cancellation instead of deprecated CloseNotifier
+	ctx := r.Context()
+	go func() {
+		<-ctx.Done()
+		s.changeStream.Unsubscribe(eventChan)
+		s.mu.Lock()
+		delete(s.clients, eventChan)
+		s.mu.Unlock()
+	}()
+
+	// Send initial heartbeat
+	fmt.Fprintf(w, "event: ping\ndata: %s\n\n", time.Now().String())
+	w.(http.Flusher).Flush()
+
+	// Stream events to the client
+	for event := range eventChan {
+		// Check if the connection is still alive
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			// Connection is still alive, continue
+		}
+
+		data, err := json.Marshal(event)
+		if err != nil {
+			log.Printf("Error marshaling event: %v", err)
+			continue
+		}
+
+		fmt.Fprintf(w, "event: message\ndata: %s\n\n", data)
+		w.(http.Flusher).Flush()
+	}
+}
+
+// handleGetEvents returns all events as JSON.
+func (s *Server) handleGetEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Get all events from the change stream
+	var events []changestream.ChangeEvent
+	ctx := r.Context()
+
+	// Reset the index to read from the beginning
+	s.changeStream.Next(ctx)
+	for s.changeStream.Next(ctx) {
+		var event changestream.ChangeEvent
+		if err := s.changeStream.Decode(&event); err != nil {
+			break
+		}
+		events = append(events, event)
+	}
+
+	// Return events as JSON
+	json.NewEncoder(w).Encode(events)
+}
+
+// handleAddEvent adds a new event to the change stream.
+func (s *Server) handleAddEvent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Parse the event from the request body
+	var event changestream.ChangeEvent
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Add the event to the change stream
+	s.changeStream.AddEvent(event)
+
+	// Return success
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+// handleQueryEvents handles querying events with filters.
+func (s *Server) handleQueryEvents(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	// Parse query parameters
+	query := r.URL.Query()
+	workerID := query.Get("workerId")
+	fieldType := query.Get("fieldType")
+	operationType := query.Get("operationType")
+
+	// Get all events from the change stream
+	var events []changestream.ChangeEvent
+	ctx := r.Context()
+
+	// Reset the index to read from the beginning
+	s.changeStream.Next(ctx)
+	for s.changeStream.Next(ctx) {
+		var event changestream.ChangeEvent
+		if err := s.changeStream.Decode(&event); err != nil {
+			break
+		}
+
+		// Apply filters if provided
+		if operationType != "" && event.OperationType != operationType {
+			continue
+		}
+
+		// Check if the event has WorkerChangeEvent data
+		workerEvent, ok := event.FullDocument["WorkerChangeEvent"].(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Filter by worker ID if provided
+		if workerID != "" {
+			eventWorkerID, ok := workerEvent["WorkerID"].(string)
+			if !ok || eventWorkerID != workerID {
+				continue
+			}
+		}
+
+		// Filter by field type if provided
+		if fieldType != "" {
+			changeDetails, ok := workerEvent["ChangeDetails"].(map[string]interface{})
+			if !ok {
+				continue
+			}
+
+			eventFieldType, ok := changeDetails["Field"].(string)
+			if !ok || eventFieldType != fieldType {
+				continue
+			}
+		}
+
+		events = append(events, event)
+	}
+
+	// Return filtered events as JSON
+	json.NewEncoder(w).Encode(events)
+}
+</file>
+
+<file path="static/css/styles.css">
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f5f7fa;
+}
+
+h1 {
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+#events {
+    border-radius: 8px;
+    padding: 15px;
+    height: 600px;
+    overflow-y: auto;
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.event {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #fff;
+    border-left: 4px solid #3498db;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    border-radius: 4px;
+    transition: transform 0.2s;
+}
+
+.event:hover {
+    transform: translateY(-2px);
+}
+
+.event-new {
+    animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+    0% { background-color: #e3f2fd; }
+    100% { background-color: #fff; }
+}
+
+.event-time {
+    color: #7f8c8d;
+    font-size: 0.8em;
+}
+
+.event-type {
+    font-weight: bold;
+    color: #3498db;
+    text-transform: uppercase;
+    font-size: 0.9em;
+    margin: 5px 0;
+}
+
+.event-type.insert { color: #2ecc71; }
+.event-type.update { color: #f39c12; }
+.event-type.delete { color: #e74c3c; }
+
+.control-panel {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+button {
+    background-color: #3498db;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    width: 100%;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.stat-box {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    flex: 1;
+    margin: 0 5px;
+}
+
+.coconut-box {
+    background-color: #f8f4e3;
+    border-left: 4px solid #8d6e63;
+    transition: all 0.3s ease;
+}
+
+.coconut-animation {
+    animation: coconut-bounce 0.5s ease-in-out;
+}
+
+@keyframes coconut-bounce {
+    0% { transform: translateY(0) rotate(0deg); }
+    25% { transform: translateY(-10px) rotate(-5deg); }
+    50% { transform: translateY(0) rotate(5deg); }
+    75% { transform: translateY(-5px) rotate(-3deg); }
+    100% { transform: translateY(0) rotate(0deg); }
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3498db;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+.search-panel {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.search-panel h2 {
+    margin-top: 0;
+    color: #2c3e50;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 15px;
+}
+
+.search-form .form-group {
+    margin-bottom: 0;
+}
+
+.search-form button {
+    height: 40px;
+    margin-top: 0;
+}
+
+#employee-search {
+    height: 40px;
+    font-size: 16px;
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+#employee-search:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 1px 6px rgba(52, 152, 219, 0.3);
+}
+
+#reset-search {
+    background-color: #95a5a6;
+}
+
+#reset-search:hover {
+    background-color: #7f8c8d;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+</file>
+
+<file path="static/js/app.js">
+document.addEventListener('DOMContentLoaded', function() {
+    const eventsContainer = document.getElementById('events');
+    const operationTypeSelect = document.getElementById('operation-type');
+    const workerIdInput = document.getElementById('worker-id');
+    const fieldTypeSelect = document.getElementById('field-type');
+    const oldValueInput = document.getElementById('old-value');
+    const newValueInput = document.getElementById('new-value');
+    const addEventButton = document.getElementById('add-event');
+    
+    // Search elements
+    const employeeSearchInput = document.getElementById('employee-search');
+    const searchButton = document.getElementById('search-button');
+    const resetSearchButton = document.getElementById('reset-search');
+    
+    // Stats counters
+    let totalEvents = 0;
+    let insertCount = 0;
+    let updateCount = 0;
+    let deleteCount = 0;
+    
+    // Store all events for filtering
+    let allEvents = [];
+    
+    // Connect to SSE endpoint
+    const eventSource = new EventSource('/events');
+    
+    eventSource.addEventListener('message', function(e) {
+        const event = JSON.parse(e.data);
+        addEventToUI(event, true);
+        updateStats(event.operationType);
+        
+        // Add to allEvents array for filtering
+        allEvents.unshift(event);
+        
+        // Limit the size of allEvents to prevent memory issues
+        if (allEvents.length > 500) {
+            allEvents = allEvents.slice(0, 500);
+        }
+    });
+    
+    eventSource.addEventListener('ping', function(e) {
+        console.log('Received ping:', e.data);
+    });
+    
+    eventSource.addEventListener('error', function(e) {
+        console.error('EventSource error:', e);
+        setTimeout(() => {
+            console.log('Reconnecting...');
+            eventSource.close();
+            location.reload();
+        }, 5000);
+    });
+    
+    // Add event button handler
+    addEventButton.addEventListener('click', function() {
+        const operationType = operationTypeSelect.value;
+        const workerId = workerIdInput.value.trim();
+        const fieldType = fieldTypeSelect.value;
+        const oldValue = oldValueInput.value.trim();
+        const newValue = newValueInput.value.trim();
+        
+        if (!workerId) {
+            alert('Worker ID is required');
+            return;
+        }
+        
+        const eventData = {
+            "EventID": "CE" + Math.floor(Math.random() * 1000000),
+            "WorkerID": workerId,
+            "EventType": "Update",
+            "EffectiveDate": new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+            "ChangeDetails": {
+                "Field": fieldType,
+                "OldValue": oldValue,
+                "NewValue": newValue
+            },
+            "Metadata": {
+                "InitiatedBy": "user_interface",
+                "Timestamp": new Date().toISOString()
+            }
+        };
+        
+        const event = {
+            operationType: operationType,
+            fullDocument: {
+                "WorkerChangeEvent": eventData
+            },
+            timestamp: new Date()
+        };
+        
+        // Send the event to the server
+        fetch('/api/events/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(event)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Success:', data);
+            // Clear form fields
+            oldValueInput.value = '';
+            newValueInput.value = '';
+            
+            // Note: We don't need to manually add the event to allEvents here
+            // because it will come back through the SSE connection
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding event: ' + error);
+        });
+    });
+    
+    // Function to add an event to the UI
+    function addEventToUI(event, isNew = false) {
+        const eventElement = document.createElement('div');
+        eventElement.className = 'event' + (isNew ? ' event-new' : '');
+        
+        const time = new Date(event.timestamp).toLocaleString();
+        
+        let content = '<div class="event-time">' + time + '</div>';
+        content += '<div class="event-type ' + event.operationType + '">' + event.operationType + '</div>';
+        
+        if (event.fullDocument && event.fullDocument.WorkerChangeEvent) {
+            const workerEvent = event.fullDocument.WorkerChangeEvent;
+            content += '<div><strong>Worker ID:</strong> ' + workerEvent.WorkerID + '</div>';
+            
+            if (workerEvent.ChangeDetails) {
+                content += '<div><strong>Field:</strong> ' + workerEvent.ChangeDetails.Field + '</div>';
+                content += '<div><strong>Change:</strong> ' + workerEvent.ChangeDetails.OldValue + ' &rarr; ' + workerEvent.ChangeDetails.NewValue + '</div>';
+            }
+            
+            content += '<details><summary>View Details</summary><pre>' + JSON.stringify(workerEvent, null, 2) + '</pre></details>';
+        } else {
+            content += '<pre>' + JSON.stringify(event.fullDocument, null, 2) + '</pre>';
+        }
+        
+        eventElement.innerHTML = content;
+        
+        // Add to the top of the container
+        if (eventsContainer.firstChild) {
+            eventsContainer.insertBefore(eventElement, eventsContainer.firstChild);
+        } else {
+            eventsContainer.appendChild(eventElement);
+        }
+        
+        // Limit the number of displayed events to prevent browser slowdown
+        const maxEvents = 100;
+        while (eventsContainer.children.length > maxEvents) {
+            eventsContainer.removeChild(eventsContainer.lastChild);
+        }
+    }
+    
+    // Function to update stats
+    function updateStats(operationType) {
+        totalEvents++;
+        document.getElementById('total-events').textContent = totalEvents;
+        
+        if (operationType === 'insert') {
+            insertCount++;
+            document.getElementById('insert-count').textContent = insertCount;
+        } else if (operationType === 'update') {
+            updateCount++;
+            document.getElementById('update-count').textContent = updateCount;
+        } else if (operationType === 'delete') {
+            deleteCount++;
+            document.getElementById('delete-count').textContent = deleteCount;
+        }
+        
+        // Update coconut counter with every event
+        const coconutElement = document.getElementById('coconut-count');
+        coconutElement.textContent = totalEvents + ' 🥥';
+        
+        // Add animation class
+        coconutElement.classList.add('coconut-animation');
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            coconutElement.classList.remove('coconut-animation');
+        }, 500);
+    }
+    
+    // Load initial events
+    fetch('/api/events')
+        .then(response => response.json())
+        .then(events => {
+            eventsContainer.innerHTML = '';
+            allEvents = events; // Store all events for filtering
+            events.forEach(event => {
+                addEventToUI(event);
+                updateStats(event.operationType);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading events:', error);
+        });
+        
+    // Search functionality
+    searchButton.addEventListener('click', function() {
+        filterEvents();
+    });
+    
+    // Also trigger search on Enter key
+    employeeSearchInput.addEventListener('keyup', function(event) {
+        if (event.key === 'Enter') {
+            filterEvents();
+        }
+    });
+    
+    resetSearchButton.addEventListener('click', function() {
+        // Clear search input
+        employeeSearchInput.value = '';
+        
+        // Reset display to show all events
+        displayFilteredEvents(allEvents);
+    });
+    
+    // Function to filter events based on search criteria
+    function filterEvents() {
+        const searchTerm = employeeSearchInput.value.trim();
+        
+        // If no search term is provided, show all events
+        if (!searchTerm) {
+            displayFilteredEvents(allEvents);
+            return;
+        }
+        
+        // Build query URL - we'll just use workerId parameter for simplicity
+        let queryUrl = `/api/events/query?workerId=${encodeURIComponent(searchTerm)}`;
+        
+        // Show loading state
+        eventsContainer.innerHTML = '<div class="event"><div class="event-time">Loading results...</div></div>';
+        
+        // Fetch filtered events from server
+        fetch(queryUrl)
+            .then(response => response.json())
+            .then(events => {
+                displayFilteredEvents(events);
+            })
+            .catch(error => {
+                console.error('Error querying events:', error);
+                eventsContainer.innerHTML = '<div class="event"><div class="event-time">Error loading results. Please try again.</div></div>';
+            });
+    }
+    
+    // Function to display filtered events
+    function displayFilteredEvents(events) {
+        eventsContainer.innerHTML = '';
+        
+        if (events.length === 0) {
+            const noResultsElement = document.createElement('div');
+            noResultsElement.className = 'event';
+            noResultsElement.innerHTML = '<div class="event-time">No matching events found</div>';
+            eventsContainer.appendChild(noResultsElement);
+            return;
+        }
+        
+        // Sort events by timestamp (newest first)
+        events.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        
+        // Display filtered events
+        events.forEach(event => {
+            addEventToUI(event, false);
+        });
+    }
+    
+    // Populate field values based on selection
+    fieldTypeSelect.addEventListener('change', function() {
+        const field = this.value;
+        let oldValue = '';
+        let newValue = '';
+        
+        switch(field) {
+            case 'JobTitle':
+                oldValue = 'Software Engineer';
+                newValue = 'Senior Software Engineer';
+                break;
+            case 'Department':
+                oldValue = 'Engineering';
+                newValue = 'Research & Development';
+                break;
+            case 'WorkLocation':
+                oldValue = 'Remote';
+                newValue = 'Hybrid';
+                break;
+            case 'Salary':
+                oldValue = '$85000';
+                newValue = '$95000';
+                break;
+            case 'Manager':
+                oldValue = 'John Doe';
+                newValue = 'Jane Smith';
+                break;
+            case 'EmploymentStatus':
+                oldValue = 'Full-time';
+                newValue = 'Part-time';
+                break;
+        }
+        
+        oldValueInput.value = oldValue;
+        newValueInput.value = newValue;
+    });
+});
+</file>
+
+<file path="static/index.html">
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Worker Change Stream Viewer</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <h1>Worker Change Stream Viewer</h1>
+    
+    <div class="stats">
+        <div class="stat-box">
+            <div class="stat-value" id="total-events">0</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="insert-count">0</div>
+            <div class="stat-label">Inserts</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="update-count">0</div>
+            <div class="stat-label">Updates</div>
+        </div>
+        <div class="stat-box">
+            <div class="stat-value" id="delete-count">0</div>
+            <div class="stat-label">Deletes</div>
+        </div>
+        <div class="stat-box coconut-box">
+            <div class="stat-value" id="coconut-count">0 🥥</div>
+            <div class="stat-label">Co Go nuts</div>
+        </div>
+    </div>
+    
+    <div class="search-panel">
+        <h2>Search for Employee</h2>
+        <div class="search-form">
+            <div class="form-group">
+                <input type="text" id="employee-search" placeholder="Enter employee name or ID">
+            </div>
+            <div class="form-group">
+                <button id="search-button">Search</button>
+                <button id="reset-search">Reset</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="dashboard">
+        <div id="events">
+            <div class="event">
+                <div class="event-time">Waiting for events...</div>
+            </div>
+        </div>
+        
+        <div class="control-panel">
+            <h2>Add New Event</h2>
+            <div class="form-group">
+                <label for="operation-type">Operation Type:</label>
+                <select id="operation-type">
+                    <option value="insert">Insert</option>
+                    <option value="update">Update</option>
+                    <option value="delete">Delete</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="worker-id">Worker ID:</label>
+                <input type="text" id="worker-id" placeholder="TS12345" value="TS87652">
+            </div>
+            
+            <div class="form-group">
+                <label for="field-type">Field to Change:</label>
+                <select id="field-type">
+                    <option value="JobTitle">Job Title</option>
+                    <option value="Department">Department</option>
+                    <option value="WorkLocation">Work Location</option>
+                    <option value="Salary">Salary</option>
+                    <option value="Manager">Manager</option>
+                    <option value="EmploymentStatus">Employment Status</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="old-value">Old Value:</label>
+                <input type="text" id="old-value" placeholder="Previous value">
+            </div>
+            
+            <div class="form-group">
+                <label for="new-value">New Value:</label>
+                <input type="text" id="new-value" placeholder="New value">
+            </div>
+            
+            <button id="add-event">Add Event</button>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
+</file>
+
+<file path="docker-compose.yml">
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./static:/app/static
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+</file>
+
+<file path="Dockerfile">
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /build
+
+# Copy go.mod and go.sum files
+COPY go.mod ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code
+COPY . .
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -o backend .
+
+# Create a minimal production image
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the binary from the builder stage
+COPY --from=builder /build/backend /app/
+COPY static/ /app/static/
+
+# Expose the port
+EXPOSE 8080
+
+# Run the application
+CMD ["/app/backend"]
+</file>
+
+<file path="go.mod">
+module naru/backend
+
+go 1.22.2
+</file>
+
+<file path="main.go">
+package main
+
+import (
+	"fmt"
+	"log"
+	"math/rand"
+	"time"
+
+	"naru/backend/changestream"
+	"naru/backend/server"
+)
+
+func main() {
+	// Create some initial events
+	initialEvents := []changestream.ChangeEvent{
+		{
+			OperationType: "insert",
+			FullDocument: map[string]interface{}{
+				"name":    "Alice",
+				"email":   "alice@example.com",
+				"role":    "admin",
+				"created": time.Now().Add(-24 * time.Hour),
+			},
+			Timestamp: time.Now().Add(-24 * time.Hour),
+		},
+		{
+			OperationType: "insert",
+			FullDocument: map[string]interface{}{
+				"name":    "Bob",
+				"email":   "bob@example.com",
+				"role":    "user",
+				"created": time.Now().Add(-12 * time.Hour),
+			},
+			Timestamp: time.Now().Add(-12 * time.Hour),
+		},
+		{
+			OperationType: "update",
+			FullDocument: map[string]interface{}{
+				"name":     "Alice",
+				"email":    "alice.new@example.com",
+				"role":     "admin",
+				"created":  time.Now().Add(-24 * time.Hour),
+				"modified": time.Now().Add(-6 * time.Hour),
+			},
+			Timestamp: time.Now().Add(-6 * time.Hour),
+		},
+	}
+
+	// Create the mock change stream
+	cs := changestream.NewMockChangeStream(initialEvents)
+
+	// Create and start the server
+	srv := server.NewServer(cs, ":8080")
+
+	// Start a goroutine to periodically add random events (simulating WorkdayAPI)
+	go simulateWorkdayAPI(cs)
+
+	// Start the server (this blocks)
+	log.Fatal(srv.Start())
+}
+
+// simulateWorkdayAPI periodically adds random events to the change stream
+func simulateWorkdayAPI(cs *changestream.MockChangeStream) {
+	// Wait a bit before starting to simulate events
+	time.Sleep(2 * time.Second)
+
+	// Use worker change events from the JSON file
+	workerEvents := []map[string]interface{}{
+		{
+			"EventID":       "CE123456789",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
+			"EffectiveDate": "2025-04-01",
+			"ChangeDetails": map[string]interface{}{
+				"Field":    "JobTitle",
+				"OldValue": "Software Engineer",
+				"NewValue": "Senior Software Engineer",
+			},
+			"Metadata": map[string]interface{}{
+				"InitiatedBy": "admin",
+				"Timestamp":   "2025-03-12T15:30:00Z",
+			},
+		},
+		{
+			"EventID":       "CE987654321",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
+			"EffectiveDate": "2025-05-15",
+			"ChangeDetails": map[string]interface{}{
+				"Field":    "Department",
+				"OldValue": "Development",
+				"NewValue": "Research & Development",
+			},
+			"Metadata": map[string]interface{}{
+				"InitiatedBy": "hr_manager",
+				"Timestamp":   "2025-03-15T09:45:00Z",
+			},
+		},
+		{
+			"EventID":       "CE192837465",
+			"WorkerID":      "TS87652",
+			"EventType":     "Update",
+			"EffectiveDate": "2025-06-01",
+			"ChangeDetails": map[string]interface{}{
+				"Field":    "WorkLocation",
+				"OldValue": "Remote",
+				"NewValue": "Onsite",
+			},
+			"Metadata": map[string]interface{}{
+				"InitiatedBy": "system",
+				"Timestamp":   "2025-03-20T11:20:00Z",
+			},
+		},
+	}
+
+	// Generate additional worker IDs for more variety
+	workerIDs := []string{"TS87652", "TS12345", "TS54321", "TS98765", "TS24680", "TS13579"}
+
+	// Fields that can be updated
+	fields := []string{"JobTitle", "Department", "WorkLocation", "Salary", "Manager", "EmploymentStatus", "WorkSchedule", "Benefits", "PerformanceRating"}
+
+	// Operations to simulate
+	operations := []string{"insert", "update", "delete"}
+
+	// Periodically add events
+	for {
+		// Random operation
+		opIndex := time.Now().UnixNano() % int64(len(operations))
+		operation := operations[opIndex]
+
+		// Either use a predefined event or generate a new one
+		var eventData map[string]interface{}
+
+		if rand.Intn(2) == 0 && len(workerEvents) > 0 {
+			// Use a predefined event
+			eventIndex := rand.Intn(len(workerEvents))
+			eventData = workerEvents[eventIndex]
+		} else {
+			// Generate a new random event
+			workerID := workerIDs[rand.Intn(len(workerIDs))]
+			field := fields[rand.Intn(len(fields))]
+
+			// Generate random values based on field type
+			oldValue, newValue := generateRandomValues(field)
+
+			eventData = map[string]interface{}{
+				"EventID":       fmt.Sprintf("CE%d", rand.Intn(1000000)),
+				"WorkerID":      workerID,
+				"EventType":     "Update",
+				"EffectiveDate": time.Now().AddDate(0, rand.Intn(6), rand.Intn(30)).Format("2006-01-02"),
+				"ChangeDetails": map[string]interface{}{
+					"Field":    field,
+					"OldValue": oldValue,
+					"NewValue": newValue,
+				},
+				"Metadata": map[string]interface{}{
+					"InitiatedBy": []string{"admin", "hr_manager", "system", "self_service"}[rand.Intn(4)],
+					"Timestamp":   time.Now().Format(time.RFC3339),
+				},
+			}
+		}
+
+		// Create the event
+		event := changestream.ChangeEvent{
+			OperationType: operation,
+			FullDocument: map[string]interface{}{
+				"WorkerChangeEvent": eventData,
+			},
+			Timestamp: time.Now(),
+		}
+
+		// Add the event to the change stream
+		cs.AddEvent(event)
+		log.Printf("Added simulated worker event: %s for Worker %s", operation, eventData["WorkerID"])
+
+		// Wait before adding the next event (random between 1-5 seconds for more frequent updates)
+		waitTime := 1 + (rand.Intn(4))
+		time.Sleep(time.Duration(waitTime) * time.Second)
+	}
+}
+
+// generateRandomValues returns appropriate random old and new values based on the field type
+func generateRandomValues(field string) (string, string) {
+	switch field {
+	case "JobTitle":
+		titles := []string{"Software Engineer", "Senior Software Engineer", "Tech Lead", "Engineering Manager", "Product Manager", "QA Engineer", "DevOps Engineer"}
+		return titles[rand.Intn(len(titles))], titles[rand.Intn(len(titles))]
+
+	case "Department":
+		departments := []string{"Engineering", "Product", "Marketing", "Sales", "HR", "Finance", "Research & Development", "Customer Support"}
+		return departments[rand.Intn(len(departments))], departments[rand.Intn(len(departments))]
+
+	case "WorkLocation":
+		locations := []string{"Remote", "Onsite", "Hybrid", "New York", "San Francisco", "London", "Tokyo", "Berlin"}
+		return locations[rand.Intn(len(locations))], locations[rand.Intn(len(locations))]
+
+	case "Salary":
+		oldSalary := 50000 + rand.Intn(100000)
+		newSalary := oldSalary + rand.Intn(20000)
+		return fmt.Sprintf("$%d", oldSalary), fmt.Sprintf("$%d", newSalary)
+
+	case "Manager":
+		managers := []string{"Alice Smith", "Bob Johnson", "Carol Williams", "David Brown", "Emma Davis", "Frank Miller"}
+		return managers[rand.Intn(len(managers))], managers[rand.Intn(len(managers))]
+
+	case "EmploymentStatus":
+		statuses := []string{"Full-time", "Part-time", "Contract", "Temporary", "Probation", "Permanent"}
+		return statuses[rand.Intn(len(statuses))], statuses[rand.Intn(len(statuses))]
+
+	case "WorkSchedule":
+		schedules := []string{"9-5", "Flexible", "4-day week", "Night shift", "Weekend", "Rotating"}
+		return schedules[rand.Intn(len(schedules))], schedules[rand.Intn(len(schedules))]
+
+	case "Benefits":
+		benefits := []string{"Standard", "Premium", "Basic", "Executive", "Custom", "International"}
+		return benefits[rand.Intn(len(benefits))], benefits[rand.Intn(len(benefits))]
+
+	case "PerformanceRating":
+		ratings := []string{"Exceeds Expectations", "Meets Expectations", "Needs Improvement", "Outstanding", "Satisfactory"}
+		return ratings[rand.Intn(len(ratings))], ratings[rand.Intn(len(ratings))]
+
+	default:
+		return "Previous Value", "New Value"
+	}
+}
+</file>
+
+<file path="README.md">
+# MongoDB Change Stream Simulator
+
+This is a Go backend service that simulates MongoDB change streams. It provides an HTTP API and a web interface to view and add events in real-time.
+
+## Features
+
+- Simulates MongoDB change stream events
+- Provides Server-Sent Events (SSE) endpoint for real-time updates
+- Includes a web interface to view and add events
+- Automatically generates random events to simulate a real system
+- Exposes REST API endpoints for programmatic access
+- Docker support for easy deployment
+
+## Getting Started
+
+### Prerequisites
+
+- Go 1.16 or higher
+- Docker and Docker Compose (optional, for containerized deployment)
+
+### Installation
+
+1. Clone the repository
+2. Navigate to the project directory
+3. Run `go mod tidy` to install dependencies
+
+### Running the Service
+
+#### Using Go directly
+
+```bash
+go run main.go
+```
+
+The server will start on port 8080. You can access the web interface at http://localhost:8080
+
+#### Using Docker
+
+The service can be run using Docker and Docker Compose:
+
+```bash
+# Build and start the container
+docker-compose up --build
+
+# Run in background
+docker-compose up -d
+
+# Stop the service
+docker-compose down
+```
+
+The Docker setup includes:
+- Automatic building of the Go application
+- Volume mounting for the static files (for live updates)
+- Port mapping to access the service on http://localhost:8080
+
+## API Endpoints
+
+### GET /events
+
+Server-Sent Events (SSE) endpoint that provides a real-time stream of change events.
+
+Example with curl:
+```bash
+curl -N http://localhost:8080/events
+```
+
+### GET /api/events
+
+Returns all events as JSON.
+
+Example with curl:
+```bash
+curl http://localhost:8080/api/events
+```
+
+### POST /api/events/add
+
+Adds a new event to the change stream.
+
+Example with curl:
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"operationType": "insert", "fullDocument": {"name": "John", "value": 42}}' http://localhost:8080/api/events/add
+```
+
+## Web Interface
+
+The web interface is available at http://localhost:8080 and provides:
+
+- Real-time view of all change events
+- Form to add new events manually
+- Automatic updates when new events are added
+
+## How It Works
+
+1. The service creates a mock change stream with some initial events
+2. It starts an HTTP server with endpoints for viewing and adding events
+3. A background goroutine periodically adds random events to simulate a real system
+4. The web interface connects to the SSE endpoint to receive real-time updates
+
+## Use Cases
+
+- Testing applications that consume MongoDB change streams
+- Developing UI components that display real-time data
+- Simulating WorkdayAPI responses and database changes
+- Learning about event-driven architectures 
+
+## Docker Deployment
+
+The project includes Docker configuration for easy deployment:
+
+### Dockerfile
+
+The `Dockerfile` uses a multi-stage build process:
+1. First stage builds the Go application in a golang:1.22-alpine container
+2. Second stage creates a minimal Alpine-based runtime image
+3. Only the compiled binary and static files are included in the final image
+
+### Docker Compose
+
+The `docker-compose.yml` file provides:
+- Automatic building of the Docker image
+- Port mapping (8080:8080)
+- Volume mounting for static files to enable live updates without rebuilding
+- Container restart policy
+
+### Building and Running with Docker
+
+```bash
+# Navigate to the project directory
+cd backend
+
+# Build and start the container
+docker-compose up --build
+
+# To run in detached mode (background)
+docker-compose up -d
+
+# To stop the service
+docker-compose down
+```
+</file>
+
+</files>

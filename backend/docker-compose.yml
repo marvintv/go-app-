@@ -8,7 +8,10 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./static:/app/static
+      - static-data:/app/static
     environment:
       - PORT=8080
-    restart: unless-stopped 
+    restart: unless-stopped
+
+volumes:
+  static-data: 

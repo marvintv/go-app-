@@ -17,6 +17,7 @@ func main() {
 			OperationType: "insert",
 			FullDocument: map[string]interface{}{
 				"name":    "Alice",
+				
 				"email":   "alice@example.com",
 				"role":    "admin",
 				"created": time.Now().Add(-24 * time.Hour),
