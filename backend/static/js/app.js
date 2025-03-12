@@ -21,6 +21,124 @@ document.addEventListener('DOMContentLoaded', function() {
     // Store all events for filtering
     let allEvents = [];
     
+    // Chart data
+    const timeLabels = [];
+    const insertData = [];
+    const updateData = [];
+    const deleteData = [];
+    
+    /* Commented out Field Types Distribution chart data
+    // Field type data for pie chart
+    const fieldTypeCounts = {
+        'JobTitle': 0,
+        'Department': 0,
+        'WorkLocation': 0,
+        'Salary': 0,
+        'Manager': 0,
+        'EmploymentStatus': 0
+    };
+    */
+    
+    // Initialize charts
+    const operationsChartCtx = document.getElementById('operationsChart').getContext('2d');
+    const operationsChart = new Chart(operationsChartCtx, {
+        type: 'line',
+        data: {
+            labels: timeLabels,
+            datasets: [
+                {
+                    label: 'Inserts',
+                    data: insertData,
+                    borderColor: '#2ecc71',
+                    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Updates',
+                    data: updateData,
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                    tension: 0.4
+                },
+                {
+                    label: 'Deletes',
+                    data: deleteData,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Operations Over Time',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Time'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count'
+                    }
+                }
+            }
+        }
+    });
+    
+    /* Commented out Field Types Distribution chart initialization
+    const fieldTypesChartCtx = document.getElementById('fieldTypesChart').getContext('2d');
+    const fieldTypesChart = new Chart(fieldTypesChartCtx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(fieldTypeCounts),
+            datasets: [{
+                data: Object.values(fieldTypeCounts),
+                backgroundColor: [
+                    '#3498db',
+                    '#2ecc71',
+                    '#f39c12',
+                    '#e74c3c',
+                    '#9b59b6',
+                    '#1abc9c'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Field Types Distribution',
+                    font: {
+                        size: 16
+                    }
+                },
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+    */
+    
     // Connect to SSE endpoint
     const eventSource = new EventSource('/events');
     
@@ -28,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const event = JSON.parse(e.data);
         addEventToUI(event, true);
         updateStats(event.operationType);
+        updateCharts(event);
         
         // Add to allEvents array for filtering
         allEvents.unshift(event);
@@ -152,6 +271,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Function to update charts with new event data
+    function updateCharts(event) {
+        // Update time-series data
+        const now = new Date();
+        const timeLabel = now.getHours() + ':' + 
+                         (now.getMinutes() < 10 ? '0' : '') + now.getMinutes() + ':' + 
+                         (now.getSeconds() < 10 ? '0' : '') + now.getSeconds();
+        
+        // Keep only the last 20 time points
+        if (timeLabels.length >= 20) {
+            timeLabels.shift();
+            insertData.shift();
+            updateData.shift();
+            deleteData.shift();
+        }
+        
+        timeLabels.push(timeLabel);
+        
+        // Update operation counts
+        insertData.push(insertCount);
+        updateData.push(updateCount);
+        deleteData.push(deleteCount);
+        
+        // Update operations chart
+        operationsChart.update();
+        
+        /* Commented out Field Types Distribution chart update
+        // Update field type data for pie chart
+        if (event.operationType === 'update' && 
+            event.fullDocument && 
+            event.fullDocument.WorkerChangeEvent) {
+            
+            const changeDetails = event.fullDocument.WorkerChangeEvent.ChangeDetails;
+            if (changeDetails && changeDetails.Field) {
+                const fieldType = changeDetails.Field;
+                if (fieldTypeCounts.hasOwnProperty(fieldType)) {
+                    fieldTypeCounts[fieldType]++;
+                    fieldTypesChart.data.datasets[0].data = Object.values(fieldTypeCounts);
+                    fieldTypesChart.update();
+                }
+            }
+        }
+        */
+    }
+    
     // Function to update stats
     function updateStats(operationType) {
         totalEvents++;
@@ -187,9 +351,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(events => {
             eventsContainer.innerHTML = '';
             allEvents = events; // Store all events for filtering
+            
+            // Process events in chronological order for charts
+            events.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
             events.forEach(event => {
                 addEventToUI(event);
                 updateStats(event.operationType);
+                updateCharts(event);
             });
         })
         .catch(error => {
